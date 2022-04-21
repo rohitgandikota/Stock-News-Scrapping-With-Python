@@ -17,7 +17,7 @@ newsapi = NewsApiClient(api_key = '1fb7eb97ad3e4784a20577e74d320ff3')
 
 def getNews(company, proxies=''):
     
-    queries = ['Stock', 'Investors', 'Finances', 'Stock Performance', 'Quaterly Reports', '']
+    queries = ['Stock', 'Investors', 'Profits', 'Finances', 'Performance', '']
     
     output_obj = []
     titles = []
@@ -25,21 +25,21 @@ def getNews(company, proxies=''):
         news = newsapi.get_top_headlines(q=(company+' '+query).strip(), category='business', language='en')
         
         for article in news['articles']:
-            if article['title'] not in titles:
+            if article['title'] not in titles and company.lower() in article['title'].lower():
                 del article['source'], article['author'], article['urlToImage']
-                article['content'] = getFullArticleContent(url = article['url'], pre_content = article['content'], proxies=proxies)
+                article['content'] = getFullArticleContent(company=company, url = article['url'], pre_content = article['content'], proxies=proxies)
                 if not article['content'] == '':
                     output_obj.append(article)
                     titles.append(article['title'])
-    if len(titles) == 0:
+    if len(titles) < 20:
         news = newsapi.get_everything(q=(company).strip(), language='en')
         for article in news['articles']:
-            if article['title'] not in titles:
+            if article['title'] not in titles and company.lower() in article['title'].lower():
                 del article['source'], article['author'], article['urlToImage']
-                article['content'] = getFullArticleContent(url = article['url'], pre_content = article['content'], proxies=proxies)
+                article['content'] = getFullArticleContent(company=company, url = article['url'], pre_content = article['content'], proxies=proxies)
                 if not article['content'] == '':
                     output_obj.append(article)
-                titles.append(article['title'])
+                    titles.append(article['title'])
     return titles, output_obj
 
 def clean_text(text):
@@ -53,7 +53,8 @@ def clean_text(text):
     # remove hashtags
     # only removing the hash # sign from the word
     text = re.sub(r'#', '', text)
-     
+    
+    text = re.sub(r'\\', '', text)
     # remove old style retweet text "RT"
     text = re.sub(r'^RT[\s]+', '', text)
     
@@ -64,7 +65,7 @@ def clean_text(text):
     
 def remove_tags(text):
     return ''.join(xml.etree.ElementTree.fromstring(text).itertext())
-def getFullArticleContent(url, pre_content='', proxies=''):
+def getFullArticleContent(company, url, pre_content='', proxies=''):
     if not pre_content:
         pre_content=''
     content = ''
@@ -93,33 +94,14 @@ def getFullArticleContent(url, pre_content='', proxies=''):
             except Exception:
                 pass
         # This is for the format how US blogs write their articles in div class
-        news_div = soup1.find_all('div', class_='article-text')
-        for article in news_div:
+        news_div = soup1.find_all('div')
+        for div in news_div:
             try:
-                #removing all html tags from the content
-                content+=' '+ str(remove_tags(str(article)))
-            except Exception:
-                pass
-        
-        # This is for the format how US blogs write their articles in div class
-        news_div = soup1.find_all('div', class_='article-content')
-        for article in news_div:
-            try:
-                paragraphs = article.find_all('p')
-                for para in paragraphs:
-                #removing all html tags from the content
-                    content+=' '+ str(remove_tags(str(para)))
-            except Exception:
-                pass
-        
-        # This is for the format how US blogs write their articles in div class
-        news_div = soup1.find_all('div', class_='entry-content clearfix')
-        for article in news_div:
-            try:
-                paragraphs = article.find_all('p')
-                for para in paragraphs:
-                #removing all html tags from the content
-                    content+=' '+ str(remove_tags(str(para)))
+                paras = div.find_all('p')
+                for para in paras:
+                    data = str(remove_tags(str(para)))
+                    if company.lower() in data.lower() and data.lower() not in content.lower():
+                        content+=' '+data
             except Exception:
                 pass
         
@@ -130,4 +112,4 @@ def getFullArticleContent(url, pre_content='', proxies=''):
 if __name__=='__main__':
     titles, news = getNews(company='Tesla')
     titles, news = getNews(company='Adani Wilmar')
-
+    
