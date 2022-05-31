@@ -187,7 +187,7 @@ def getNews(company, writeCloud=False, proxies=''):
         for article in output_obj:
             article['content'] = article['title']+' '+article['description']+' '+article['content']
             # Lambda function for summarization
-            response = requests.post("https://j3btan6btg.execute-api.us-east-1.amazonaws.com/dev/summary", json = article)
+            response = requests.post("https://amazonaws.com/dev/summary", json = article)
             if response.status_code == 200:
                 if not 'news_summary' in response.json().keys():
                     raise Exception(f"Error in Summarization {response.json()}")
@@ -203,7 +203,7 @@ def getNews(company, writeCloud=False, proxies=''):
         for article in output_obj:
             article['content'] = article['title']+' '+article['description']+' '+article['summary']
             # Lambda function for summarization
-            response = requests.post("https://n9h06pjw6f.execute-api.us-east-1.amazonaws.com/dev/sentiment", json = article)
+            response = requests.post("https://n9h06pjw6f.amazonaws.com/dev/sentiment", json = article)
             if response.status_code == 200:
                 if not 'sentiment' in response.json().keys():
                     raise Exception(f"Error in Sentiment Analysis {response.json()}")
